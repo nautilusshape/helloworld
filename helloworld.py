@@ -3,13 +3,13 @@ import json
 import re
 from google import genai
 from google.genai import types
-import os
+#import os
 from bs4 import BeautifulSoup
 
 
-proxy = "http://localhost:24765"
-os.environ["HTTP_PROXY"] = proxy
-os.environ["HTTPS_PROXY"] = proxy
+#proxy = "http://localhost:24765"
+#os.environ["HTTP_PROXY"] = proxy
+#os.environ["HTTPS_PROXY"] = proxy
 
 
 # --- Configuration ---
