@@ -345,7 +345,9 @@ with st.container():
         "📝 متن خبر یا اظهار برای راستی‌آزمایی را وارد کنید:",
         height=200,
         label_visibility="collapsed",  
-        key="input_text"
+        key="input_text",
+        value=st.session_state.input_text
+
     )
     
     model_choice = st.radio(
