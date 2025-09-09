@@ -3,13 +3,13 @@ import json
 import re
 from google import genai
 from google.genai import types
-#import os
+import os
 from bs4 import BeautifulSoup
 
 
-#proxy = "http://localhost:24765"
-#os.environ["HTTP_PROXY"] = proxy
-#os.environ["HTTPS_PROXY"] = proxy
+proxy = "http://localhost:24765"
+os.environ["HTTP_PROXY"] = proxy
+os.environ["HTTPS_PROXY"] = proxy
 
 
 # --- Configuration ---
@@ -286,8 +286,17 @@ def make_table(headers, rows):
     table += "</tbody></table>"
     return table
 
+# --- Persistent state ---
+if "results" not in st.session_state:
+    st.session_state.results = None
+if "status" not in st.session_state:
+    st.session_state.status = None
+if "response_obj" not in st.session_state:
+    st.session_state.response_obj = None
+if "pending" not in st.session_state:
+    st.session_state.pending = False   # flag for rerun
+
 # --- Streamlit UI ---
-# عنوان
 st.markdown(
     """
     <h1 style='direction:rtl; text-align:right;'>🌐 دستیار راستی‌آزمایی </h1>
@@ -295,31 +304,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-#  CSS برای باکس و دکمه
+#  CSS
 st.markdown(
     """
     <style>
- 
-   /* کل بخش رادیو را راست‌چین کن */
     div.stRadio {
         direction: rtl;
         text-align: right;
     }
-
-    /* هر گزینه رادیو */
     div.stRadio label {
         display: flex !important;
-        flex-direction: row-reverse !important;  /* دکمه بیاد راست */
+        flex-direction: row-reverse !important;
         align-items: center;
         justify-content: flex-end;
         font-family: Vazirmatn, Tahoma, Arial, sans-serif;
         font-size: 16px;
-        gap: 6px;  /* فاصله بین دکمه و متن */
+        gap: 6px;
     }
-
-    /* خود دکمه */
     div.stRadio input[type="radio"] {
-        margin: 0 !important;   /* حذف فاصله پیش‌فرض */
+        margin: 0 !important;
     }
     textarea {
         direction: rtl;
@@ -335,204 +338,214 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 with st.container():
-    # باکس ورودی
     prompt = st.text_area(
         "📝 متن خبر یا اظهار برای راستی‌آزمایی را وارد کنید:",
         height=200,
         label_visibility="collapsed",  
         key="input_text"
     )
-    # انتخاب مدل
+
     model_choice = st.radio(
         "💡 مدل را انتخاب کنید:",
         options=["Gemini-2.5pro", "Gemini-2.5flash"],
         index=0,
-        horizontal=True  # optional: make it horizontal
+        horizontal=True
     )
     
     submit = st.button("✅ ارسال")
 
-    status_placeholder = st.empty()
-
 # ----------------- پردازش -----------------
+# --- Status placeholder ---
+if "status_placeholder" not in st.session_state:
+    st.session_state.status_placeholder = st.empty()
+
+# --- Handle submit ---
 if submit:
     if not prompt.strip():
-        status_placeholder.markdown(
-            """
-            <div style='direction:rtl; text-align:right; background-color:#fff3cd;
-                        color:#856404; border:1px solid #ffeeba; padding:10px; border-radius:8px; margin-top:5px;'>
-                ⚠️ لطفاً یک متن معتبر وارد کنید.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.session_state.status = """
+        <div style='direction:rtl; text-align:right; background-color:#fff3cd;
+                    color:#856404; border:1px solid #ffeeba; padding:10px; border-radius:8px; margin-top:5px;'>
+            ⚠️ لطفاً یک متن معتبر وارد کنید.
+        </div>
+        """
+        st.session_state.results = None
+        st.session_state.response_obj = None
+        st.session_state.pending = False
+        st.session_state.status_placeholder.markdown(st.session_state.status, unsafe_allow_html=True)
+
     else:
-        status_placeholder.markdown(
-            """
-            <div style='direction:rtl; text-align:right; background-color:#e6f7ff;
-                        color:#0050b3; border:1px solid #91d5ff; padding:10px; border-radius:8px; margin-top:5px;'>
-                ⏳ در حال تحلیل و راستی‌آزمایی...
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        # --- Step 1: show loading ---
+        st.session_state.status = """
+        <div style='direction:rtl; text-align:right; background-color:#e6f7ff;
+                    color:#0050b3; border:1px solid #91d5ff; padding:10px; border-radius:8px; margin-top:5px;'>
+            ⏳ در حال تحلیل و راستی‌آزمایی...
+        </div>
+        """
+        st.session_state.results = None
+        st.session_state.response_obj = None
+        st.session_state.pending = True
+        st.session_state.status_placeholder.markdown(st.session_state.status, unsafe_allow_html=True)
 
+# --- Step 2: run API if pending ---
+if st.session_state.get("pending", False):
+    import time
+    time.sleep(0.1)  # short pause to let Streamlit render ⏳
+
+    try:
+        if model_choice == "Gemini-2.5flash":
+            response = callgemini(prompt)
+        else:
+            response = callgeminipro(prompt)
+
+        text = response.text
+        st.session_state.results = text
+        st.session_state.response_obj = response
+        st.session_state.status = """
+        <div style='direction:rtl; text-align:right; background-color:#daf3cc;
+                    color:#389e0d; border:1px solid #73d13d; padding:10px; border-radius:8px; margin-top:5px;'>
+             ✅ فرایند راستی‌آزمایی با موفقیت انجام شد
+        </div>
+        """
+    except Exception as e:
+        st.session_state.status = f"""
+        <div style='direction:rtl; text-align:right; background-color:#f8d7da;
+                    color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
+            ❌ خطایی رخ داد: {e}
+        </div>
+        """
+        st.session_state.results = None
+        st.session_state.response_obj = None
+
+    st.session_state.pending = False
+    # overwrite the status placeholder
+    st.session_state.status_placeholder.markdown(st.session_state.status, unsafe_allow_html=True)
+
+# --- Always show latest state ---
+if st.session_state.status:
+    st.markdown(st.session_state.status, unsafe_allow_html=True)
+
+if st.session_state.results:
+    text = st.session_state.results
+    match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
+    if match:
+        json_str = match.group(1)
         try:
-            # انتخاب تابع بر اساس مدل
-            if model_choice == "Gemini-2.5flash":
-                response = callgemini(prompt)
-            else:
-                response = callgeminipro(prompt)
+            data = json.loads(json_str)
 
-            text = response.text
+            html = """
+            <style>
+            table { 
+                font-family: Vazirmatn, Arial, sans-serif; 
+                font-size: 16px; 
+                direction: rtl; 
+                text-align: right;
+            }
+            th, td {
+                border:1px solid #000;
+                padding:6px;
+            }
+            th {
+                background-color:#f0f0f0;
+                font-weight:bold;
+            }
+            </style>
+            """
+            html += build_table_from_dict(data)
 
-            # پیام موفقیت
-            status_placeholder.markdown(
-                """
-                <div style='direction:rtl; text-align:right; background-color:#daf3cc;
-                            color:#389e0d; border:1px solid #73d13d; padding:10px; border-radius:8px; margin-top:5px;'>
-                     فرایند راستی‌آزمایی با موفقیت انجام شد
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            # --- Verdict, summary, reasoning ---
+            if (
+                "total_fact_checking" in data 
+                and isinstance(data["total_fact_checking"], list) 
+                and len(data["total_fact_checking"]) > 0
+            ):
+                fact_check = data["total_fact_checking"][0]
+                summary_of_findings = fact_check.get("summary_of_findings", "")
+                verdict = fact_check.get("verdict", "")
+                reasoning = fact_check.get("reasoning", "")
 
-            # پردازش JSON...
-            match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
-            if match:
-                json_str = match.group(1)
-                try:
-                    data = json.loads(json_str)
-
-                    html = """
-                    <style>
-                    table { 
-                        font-family: Vazirmatn, Arial, sans-serif; 
-                        font-size: 16px; 
-                        direction: rtl; 
-                        text-align: right;
-                    }
-                    th, td {
-                        border:1px solid #000;
-                        padding:6px;
-                    }
-                    th {
-                        background-color:#f0f0f0;
-                        font-weight:bold;
-                    }
-                    </style>
-                    """
-                    html += build_table_from_dict(data)
-                    if (
-                        "total_fact_checking" in data 
-                        and isinstance(data["total_fact_checking"], list) 
-                        and len(data["total_fact_checking"]) > 0
-                    ):
-                        fact_check = data["total_fact_checking"][0]
-                        summary_of_findings = fact_check.get("summary_of_findings", "")
-                        verdict = fact_check.get("verdict", "")
-                        reasoning = fact_check.get("reasoning", "")
-
-                        # 📌 Box for verdict
-                        if verdict:
-                            st.markdown(
-                                f"""
-                                    <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
-                                                padding:12px; border-radius:8px; margin-bottom:5px;
-                                                margin-top:15px;
-                                                direction:rtl; text-align:right; font-size:18px;' >
-                                        <b>🏷️ برچسب نهایی:</b><br>
-                                        <span style="font-size:16px; font-weight:bold;">{verdict}</span>
-                                    </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-
-                        # 📊 Box for summary_of_findings
-                        if summary_of_findings:
-                            st.markdown(
-                                f"""
-                                    <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
-                                                padding:12px; border-radius:8px; margin-bottom:5px; 
-                                                direction:rtl; text-align:right; font-size:18px;' >
-                                        <b>📊 نتیجه کلی راستی‌آزمایی:</b><br>
-                                        <span style="font-size:18px;">{summary_of_findings}</span>
-                                    </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-
-                        # 📊 Box for reasoning
-                        if reasoning:
-                            st.markdown(
-                                f"""
-                                    <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
-                                                padding:12px; border-radius:8px; margin-bottom:5px; 
-                                                direction:rtl; text-align:right; font-size:18px;' >
-                                        <b>📚 استدلال:</b><br>
-                                        <span style="font-size:18px;">{reasoning}</span>
-                                    </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-
-                        # --- Extract references from HTML ---
-                        try:
-                            extract_ref = response.candidates[0].grounding_metadata.search_entry_point.rendered_content
-                             
-                            soup = BeautifulSoup(extract_ref, "html.parser")
-                            chips = soup.select("div.carousel a.chip")
-
-                            if chips:
-                                # 📊 Box for search phrases
-                                chips_html = "<br>".join([f'• <a href="{chip.get("href")}" target="_blank">{chip.get_text(strip=True)}</a>' for chip in chips])
-                                st.markdown(
-                                    f"""
-                                    <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
-                                                padding:12px; border-radius:8px; margin-bottom:15px; 
-                                                direction:rtl; text-align:right; font-size:18px;' >
-                                        <b>🔎 پیشنهادات جستجو در گوگل :</b><br>
-                                        <span style="font-size:18px;">{chips_html}</span>
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                    )
-                        except Exception:
-                            pass
-
-                    st.components.v1.html(html, height=4000, scrolling=True)
-
-                except json.JSONDecodeError as e:
-                    status_placeholder.markdown(
+                if verdict:
+                    st.markdown(
                         f"""
-                        <div style='direction:rtl; text-align:right; background-color:#f8d7da;
-                                    color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
-                            ❌ خطا در پردازش JSON: {e}
-                        </div>
+                            <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
+                                        padding:12px; border-radius:8px; margin-bottom:5px;
+                                        margin-top:15px;
+                                        direction:rtl; text-align:right; font-size:18px;' >
+                                <b>🏷️ برچسب نهایی:</b><br>
+                                <span style="font-size:16px; font-weight:bold;">{verdict}</span>
+                            </div>
                         """,
                         unsafe_allow_html=True
                     )
-            else:
-                status_placeholder.markdown(
-                    """
-                    <div style='direction:rtl; text-align:right; background-color:#f8d7da;
-                                color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
-                        ❌ JSON معتبر در پاسخ یافت نشد.
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-        except Exception as e:
-            status_placeholder.markdown(
+
+                if summary_of_findings:
+                    st.markdown(
+                        f"""
+                            <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
+                                        padding:12px; border-radius:8px; margin-bottom:5px; 
+                                        direction:rtl; text-align:right; font-size:18px;' >
+                                <b>📊 نتیجه کلی راستی‌آزمایی:</b><br>
+                                <span style="font-size:18px;">{summary_of_findings}</span>
+                            </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                if reasoning:
+                    st.markdown(
+                        f"""
+                            <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
+                                        padding:12px; border-radius:8px; margin-bottom:5px; 
+                                        direction:rtl; text-align:right; font-size:18px;' >
+                                <b>📚 استدلال:</b><br>
+                                <span style="font-size:18px;">{reasoning}</span>
+                            </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                # --- Extract references ---
+                try:
+                    if st.session_state.response_obj:
+                        extract_ref = st.session_state.response_obj.candidates[0].grounding_metadata.search_entry_point.rendered_content
+                        soup = BeautifulSoup(extract_ref, "html.parser")
+                        chips = soup.select("div.carousel a.chip")
+                        if chips:
+                            chips_html = "<br>".join([f'• <a href="{chip.get("href")}" target="_blank">{chip.get_text(strip=True)}</a>' for chip in chips])
+                            st.markdown(
+                                f"""
+                                <div style='background-color:#e6f7ff; border:1px solid #91d5ff; 
+                                            padding:12px; border-radius:8px; margin-bottom:15px; 
+                                            direction:rtl; text-align:right; font-size:18px;' >
+                                    <b>🔎 پیشنهادات جستجو در گوگل :</b><br>
+                                    <span style="font-size:18px;">{chips_html}</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                except Exception:
+                    pass
+
+            # --- Full table ---
+            st.components.v1.html(html, height=4000, scrolling=True)
+
+        except json.JSONDecodeError as e:
+            st.markdown(
                 f"""
                 <div style='direction:rtl; text-align:right; background-color:#f8d7da;
                             color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
-                    ❌ خطایی رخ داد: {e}
+                    ❌ خطا در پردازش JSON: {e}
                 </div>
                 """,
                 unsafe_allow_html=True
             )
-
-
+    else:
+        st.markdown(
+            """
+            <div style='direction:rtl; text-align:right; background-color:#f8d7da;
+                        color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
+                ❌ JSON معتبر در پاسخ یافت نشد.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
