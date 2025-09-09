@@ -405,12 +405,7 @@ if st.session_state.get("pending", False):
         text = response.text
         st.session_state.results = text
         st.session_state.response_obj = response
-        st.session_state.status = """
-        <div style='direction:rtl; text-align:right; background-color:#daf3cc;
-                    color:#389e0d; border:1px solid #73d13d; padding:10px; border-radius:8px; margin-top:5px;'>
-             ✅ فرایند راستی‌آزمایی با موفقیت انجام شد
-        </div>
-        """
+        st.session_state.status = ""
     except Exception as e:
         st.session_state.status = f"""
         <div style='direction:rtl; text-align:right; background-color:#f8d7da;
@@ -538,7 +533,7 @@ if st.session_state.results:
                 f"""
                 <div style='direction:rtl; text-align:right; background-color:#f8d7da;
                             color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
-                    ❌ خطا در پردازش JSON: {e}
+                    ❌   پاسخ سرویس دهنده ساختار مورد انتظار را ندارد : {e}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -548,7 +543,7 @@ if st.session_state.results:
             """
             <div style='direction:rtl; text-align:right; background-color:#f8d7da;
                         color:#842029; border:1px solid #f5c2c7; padding:10px; border-radius:8px; margin-top:5px;'>
-                ❌ JSON معتبر در پاسخ یافت نشد.
+                ❌ پاسخ سرویس دهنده بدون ساختار میباشد.
             </div>
             """,
             unsafe_allow_html=True
