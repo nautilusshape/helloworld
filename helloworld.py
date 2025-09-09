@@ -347,7 +347,7 @@ with st.container():
         label_visibility="collapsed",  
         key="input_text"
     )
-    prompt = st.session_state.input_text
+    
     model_choice = st.radio(
         "💡 مدل را انتخاب کنید:",
         options=["Gemini-2.5pro", "Gemini-2.5flash"],
