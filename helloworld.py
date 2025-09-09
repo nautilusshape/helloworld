@@ -295,6 +295,8 @@ if "response_obj" not in st.session_state:
     st.session_state.response_obj = None
 if "pending" not in st.session_state:
     st.session_state.pending = False   # flag for rerun
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
 
 # --- Streamlit UI ---
 st.markdown(
@@ -345,7 +347,7 @@ with st.container():
         label_visibility="collapsed",  
         key="input_text"
     )
-
+    prompt = st.session_state.input_text
     model_choice = st.radio(
         "💡 مدل را انتخاب کنید:",
         options=["Gemini-2.5pro", "Gemini-2.5flash"],
