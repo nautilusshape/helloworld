@@ -297,7 +297,9 @@ if "pending" not in st.session_state:
     st.session_state.pending = False   # flag for rerun
 if "input_text" not in st.session_state:
     st.session_state.input_text = ""
-
+if "model_choice" not in st.session_state:
+    st.session_state.model_choice = "Gemini-2.5pro"
+    
 # --- Streamlit UI ---
 st.markdown(
     """
@@ -353,8 +355,9 @@ with st.container():
     model_choice = st.radio(
         "💡 مدل را انتخاب کنید:",
         options=["Gemini-2.5pro", "Gemini-2.5flash"],
-        index=0,
-        horizontal=True
+        index=0 if st.session_state.model_choice == "Gemini-2.5pro" else 1,
+        horizontal=True,
+        key="model_choice"  # <- This saves selection automatically
     )
     
     submit = st.button("✅ ارسال")
