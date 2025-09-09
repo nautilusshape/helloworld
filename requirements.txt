@@ -1,3 +1,3 @@
 streamlit==1.37.1
-beautifulsoup==4.12.3
+beautifulsoup4==4.12.3
 google-genai==1.31.0
