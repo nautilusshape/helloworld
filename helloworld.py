@@ -9,7 +9,7 @@ import os
 
 # ---------------- CONFIG ----------------
 st.set_page_config(
-    page_title="راستی‌آزمایی و یافتن منشأ ادعا",
+    page_title="سامانه تحلیل ادعاهای رسانه‌ای",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -75,6 +75,34 @@ st.markdown(
     h1 {
         font-size: var(--font-size-3xl) !important;
         font-weight: bold !important;
+    }
+    
+    /* استایل هدر اصلی سامانه */
+    .main-header-title {
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+        background: none !important;
+        margin: 0 !important;
+    }
+    
+    .main-header-subtitle {
+        font-size: 1.2rem !important;
+        color: rgba(255,255,255,0.85) !important;
+        font-weight: 400 !important;
+        margin: 0.5rem 0 0 0 !important;
+    }
+    
+    /* استایل اسم ابزار با گرادیانت */
+    .tool-title {
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        margin: 0 !important;
     }
     
     h2 {
@@ -1455,13 +1483,45 @@ with st.sidebar:
 
 # ================== تعیین عنوان هدر بر اساس ابزار انتخاب شده ==================
 if selected_tool == "🎯 یافتن منشأ ادعا":
-    header_title = "🎯 یافتن منشأ ادعا"
+    header_icon = "🎯"
+    header_title = "یافتن منشأ ادعا"
 else:
-    header_title = "✅ ابزار راستی آزمایی "
+    header_icon = "✅"
+    header_title = "ابزار راستی آزمایی"
 
 # ================== HEADER ==================
+# عنوان اصلی سامانه - با باکس آبی
 st.markdown(
-    f'<div class="modern-header"><h1>{header_title}</h1></div>',
+    '''
+    <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    ">
+        <div style="text-align: center;">
+            <h1 class="main-header-title">سامانه تحلیل ادعاهای رسانه‌ای</h1>
+            <p class="main-header-subtitle">بررسی صحت و ردیابی منشأ اخبار و ادعاها</p>
+        </div>
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
+
+# عنوان ابزار انتخاب شده - بدون باکس با گرادیانت
+st.markdown(
+    f'''
+    <div style="text-align: center; padding: 1rem 0; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">
+            <span style="font-size: 1.5rem;">{header_icon}</span>
+            <span class="tool-title">{header_title}</span>
+        </h2>
+    </div>
+    ''',
     unsafe_allow_html=True
 )
 
