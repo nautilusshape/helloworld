@@ -6,6 +6,7 @@ from google.genai import types
 from bs4 import BeautifulSoup
 import os
 
+
 # ---------------- CONFIG ----------------
 st.set_page_config(
     page_title="راستی‌آزمایی و یافتن منشأ ادعا",
@@ -268,6 +269,24 @@ st.markdown(
         padding: 0.4rem;
         border-radius: 8px;
         transition: all 0.2s ease;
+    }
+    
+    /* تراز کردن نقطه‌های radio در sidebar */
+    section[data-testid="stSidebar"] div.stRadio label {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    section[data-testid="stSidebar"] div.stRadio label > div:first-child {
+        order: 2;
+        flex-shrink: 0;
+    }
+    
+    section[data-testid="stSidebar"] div.stRadio label > div:last-child,
+    section[data-testid="stSidebar"] div.stRadio label > p {
+        order: 1;
+        flex-grow: 1;
+        text-align: right;
     }
     
     /* استایل sidebar - در سمت راست */
@@ -1321,11 +1340,21 @@ with st.sidebar:
             """,
             unsafe_allow_html=True
         )
+        
+        def on_source_model_change():
+            st.session_state.source_model = st.session_state._source_model_temp
+        
+        # پیدا کردن index مدل انتخاب شده
+        source_model_options = ["gemini-2.5-flash", "gemini-2.5-pro"]
+        source_model_index = source_model_options.index(st.session_state.source_model) if st.session_state.source_model in source_model_options else 0
+        
         st.selectbox(
             "مدل منشأ‌یابی:",
-            options=["gemini-2.5-flash", "gemini-2.5-pro"],
-            key="source_model",
-            label_visibility="collapsed"
+            options=source_model_options,
+            index=source_model_index,
+            key="_source_model_temp",
+            label_visibility="collapsed",
+            on_change=on_source_model_change
         )
         
         st.markdown("---")
@@ -1345,11 +1374,21 @@ with st.sidebar:
             """,
             unsafe_allow_html=True
         )
+        
+        def on_fact_model_change():
+            st.session_state.fact_model = st.session_state._fact_model_temp
+        
+        # پیدا کردن index مدل انتخاب شده
+        fact_model_options = ["gemini-2.5-flash", "gemini-2.5-pro"]
+        fact_model_index = fact_model_options.index(st.session_state.fact_model) if st.session_state.fact_model in fact_model_options else 0
+        
         st.selectbox(
             "مدل راستی‌آزمایی:",
-            options=["gemini-2.5-flash", "gemini-2.5-pro"],
-            key="fact_model",
-            label_visibility="collapsed"
+            options=fact_model_options,
+            index=fact_model_index,
+            key="_fact_model_temp",
+            label_visibility="collapsed",
+            on_change=on_fact_model_change
         )
         
         st.markdown("---")
@@ -1363,14 +1402,18 @@ with st.sidebar:
             """,
             unsafe_allow_html=True
         )
-        use_additional = st.checkbox(
+        
+        def on_checkbox1_change():
+            st.session_state.use_additional_instruction = st.session_state._cb1_temp
+        
+        st.checkbox(
             "درخواست تحلیل جانبدارانه",
             value=st.session_state.use_additional_instruction,
-            key="use_additional_instruction_cb",
+            key="_cb1_temp",
+            on_change=on_checkbox1_change
         )
-        st.session_state.use_additional_instruction = use_additional
         
-        if use_additional:
+        if st.session_state.use_additional_instruction:
             st.markdown(
                 """
                 <div style="background: rgba(255,255,255,0.1); padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; margin-top: 0.5rem;">
@@ -1380,14 +1423,17 @@ with st.sidebar:
                 unsafe_allow_html=True
             )
         
-        use_additional_2 = st.checkbox(
+        def on_checkbox2_change():
+            st.session_state.use_additional_instruction_2 = st.session_state._cb2_temp
+        
+        st.checkbox(
             "درخواست استفاده از منابع رسمی",
             value=st.session_state.use_additional_instruction_2,
-            key="use_additional_instruction_2_cb",
+            key="_cb2_temp",
+            on_change=on_checkbox2_change
         )
-        st.session_state.use_additional_instruction_2 = use_additional_2
         
-        if use_additional_2:
+        if st.session_state.use_additional_instruction_2:
             st.markdown(
                 """
                 <div style="background: rgba(255,255,255,0.1); padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; margin-top: 0.5rem;">
@@ -1608,10 +1654,6 @@ if selected_tool == "🎯 یافتن منشأ ادعا":
                     if snippet:
                         st.markdown(f"> {snippet}")
                     st.markdown("---")
-        
-        # JSON خام
-        with st.expander("🗂 نمایش خروجی JSON خام"):
-            st.json(results)
 
 
 else:
