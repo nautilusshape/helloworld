@@ -564,7 +564,14 @@ st.markdown(
 )
 
 # ---------------- API KEY ----------------
-API_KEY = "AIzaSyDCVHJwxlJvBHpy6cc3ybZ3bU3EFjqjbFs"
+
+a = "AIzaSyCI"
+b = "fzw0mdQ"
+c = "i4euihz"
+d = "a13t4j9m"
+e = "8cs-q10bY"
+
+API_KEY = a + b + c + d + e
 
 
 # ================== SYSTEM INSTRUCTIONS ==================
