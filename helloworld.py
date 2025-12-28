@@ -4,8 +4,6 @@ import re
 from google import genai
 from google.genai import types
 from bs4 import BeautifulSoup
-import os
-
 
 # ---------------- CONFIG ----------------
 st.set_page_config(
@@ -565,13 +563,14 @@ st.markdown(
 
 # ---------------- API KEY ----------------
 
-a = "AIzaSyCI"
-b = "fzw0mdQ"
-c = "i4euihz"
-d = "a13t4j9m"
-e = "8cs-q10bY"
+a = "aa-Fc44mZ0"
+b = "Et28q2Qau9"
+c = "GoPv6lTw"
+d = "FWG3ef2m92"
+e = "SkRbQVilwYQyy"
 
 API_KEY = a + b + c + d + e
+
 
 
 # ================== SYSTEM INSTRUCTIONS ==================
@@ -594,97 +593,8 @@ SYSTEM_INSTRUCTION_SOURCE_FINDER = """
     **الزامات خروجی:**
     خروجی نهایی باید **فقط و فقط** یک آبجکت JSON معتبر باشد. هیچ متن اضافی، مقدمه یا توضیحی قبل یا بعد از بلاک JSON ننویسید.
 
-    **ساختار JSON خروجی:**
 
-            "response_schema": {
-                "type": "object",
-                "properties": {
-                    "claim_analyzed": {
-                        "type": "string",
-                        "description": "متن کامل ادعایی که بررسی کردید",
-                        "nullable": True
-                    },
-                    "original_source": {
-                        "type": "array",
-                        "description": "",
-                        "nullable": True,
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "type": "string",
-                                    "description": "نام دقیق شخص، گروه، شرکت یا نهادی که ادعا را اولین بار مطرح کرد (یا 'ناشناخته' اگر قابل شناسایی نبود)",
-                                    "nullable": True
-                                },
-                                "type": {
-                                    "type": "string",
-                                    "description": "نوع منبع (مثال: 'شخص - سیاستمدار'، 'سازمان خبری'، 'گروه تحقیقاتی'، 'کاربر شبکه اجتماعی', 'شرکت', 'نهاد دولتی')",
-                                    "nullable": True
-                                }
-                            }
-                        }
-                    },
-                    "initial_publication": {
-                        "type": "array",
-                        "description": "",
-                        "nullable": True,
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "platform": {
-                                    "type": "string",
-                                    "description": "نام پلتفرم یا رسانه‌ای که ادعا اولین بار در آن منتشر شد (مثال: 'توییتر/X'، 'وب‌سایت رسمی شرکت'، 'سخنرانی رسمی'، 'گزارش تحقیقی', 'وب‌سایت خبری XYZ')",
-                                    "nullable": True
-                                },
-                                "reference_title_or_description": {
-                                    "type": "string",
-                                    "description": "عنوان مقاله، توضیحات پست، یا شرح مختصری از منبع اولیه",
-                                    "nullable": True
-                                },
-                                "publication_date": {
-                                    "type": "string",
-                                    "description": "تاریخ شمسی دقیق یا تخمینی اولین انتشار (به فرمت YYYY-MM-DD)",
-                                    "nullable": True
-                                }
-
-                            }
-                        }
-                    },
-                    "analysis_summary": {
-                        "type": "string",
-                        "description": "توضیح بسیار مختصر در مورد اینکه چگونه این منبع به عنوان منشأ اولیه شناسایی شد و درجه اطمینان از این یافته.",
-                        "nullable": True
-                    },
-                    "evidence_sources": {
-                        "type": "array",
-                        "description": "",
-                        "nullable": True,
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "title": {
-                                    "type": "string",
-                                    "description": "عنوان منبع کمکی  (مقاله‌ای که به منبع اصلی اشاره دارد)",
-                                    "nullable": True
-                                },
-                                "snippet": {
-                                    "type": "string",
-                                    "description": "بخش کوتاهی از متن منبع که به ردیابی کمک کرده است",
-                                    "nullable": True
-                                }
-                            }
-                        }
-                    }
-                },
-                "required": [
-                    "claim_analyzed",
-                    "original_source",
-                    "initial_publication",
-                    "analysis_summary",
-                    "evidence_sources",
-                
-                ]
-            }
+            
 """
 
 SYSTEM_INSTRUCTION_FACT_CHECK_BASE = """
@@ -791,126 +701,9 @@ ________________________________________
 <<ADDITIONAL_INSTRUCTIONS_PLACEHOLDER>>
 
 
--------
 
-    "response_schema": {
-        "type": "object",
-        "properties": {
-            "claims_and_evidences": {
-                "type": "array",
-                "description": "",
-                "nullable": True,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "claims": {
-                            "type": "array",
-                            "description": "",
-                            "nullable": True,
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "claims_context": {
-                                        "type": "string",
-                                        "description": "",
-                                        "nullable": True
-                                    },
-                                    "atomic_questions": {
-                                        "type": "array",
-                                        "description": "",
-                                        "nullable": True,
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "question": {
-                                                    "type": "string",
-                                                    "description": "",
-                                                    "nullable": True
-                                                },
-                                                "evidences": {
-                                                    "type": "array",
-                                                    "description": "",
-                                                    "nullable": True,
-                                                    "items": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "date": {
-                                                                "type": "string",
-                                                                "description": "",
-                                                                "nullable": True
-                                                            },
-                                                            "source_title": {
-                                                                "type": "string",
-                                                                "description": "",
-                                                                "nullable": True
-                                                            },
-                                                            "Quote": {
-                                                                "type": "string",
-                                                                "description": "",
-                                                                "nullable": True
-                                                            },
-                                                            "stance": {
-                                                                "type": "string",
-                                                                "description": "",
-                                                                "nullable": True
-                                                            },
-                                                            "interpretation": {
-                                                                "type": "string",
-                                                                "description": "",
-                                                                "nullable": True
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "total_fact_checking": {
-                "type": "array",
-                "description": "",
-                "nullable": True,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        
-                        "summary_of_findings": {
-                            "type": "string",
-                            "description": "",
-                            "nullable": True
-                        },
-                        "verdict": {
-                            "type": "string",
-                            "enum": [
-                                "درست",
-                                "نیمه درست",
-                                "گمراه کننده",
-                                "نادرست",
-                                "غیر قابل بررسی",
-                            ],
-                            "description": "",
-                            "nullable": True
-                        },
-                        "reasoning": {
-                            "type": "string",
-                            "description": "",
-                            "nullable": True
-                        }
-                    }
-                }
-            }
-        },
-        "required": [
-            "claims_and_evidences",
-            "total_fact_checking"
-            
-        ]
-    }
+
+
             
 """
 
@@ -1092,7 +885,7 @@ class APIError:
         return cls.get_error_html(error_type, details=raw_response or error_text, show_details=True)
 
 def get_gemini_client():
-    return genai.Client(api_key=API_KEY)
+    return genai.Client(api_key=API_KEY, http_options={"base_url": "https://api.avalai.ir"})
 
 
 def sanitize_source_results(results: dict) -> dict:
@@ -1130,11 +923,11 @@ def get_source_finder_response(claim: str, model_id: str):
     client = get_gemini_client()
 
     prompt = f"""
-ادعای مورد بررسی:
-"{claim}"
+    ادعای مورد بررسی:
+    "{claim}"
 
-لطفاً منشأ اولیه این ادعا را پیدا کنید و نتیجه را به صورت JSON برگردانید.
-"""
+    لطفاً منشأ اولیه این ادعا را پیدا کنید و نتیجه را به صورت JSON برگردانید.
+    """
 
     tools = [{"google_search": {}}]
 
@@ -1143,9 +936,98 @@ def get_source_finder_response(claim: str, model_id: str):
             "tools": tools,
             "system_instruction": [types.Part.from_text(text=SYSTEM_INSTRUCTION_SOURCE_FINDER)],
             "temperature": 0.2,
+            "response_schema": {
+                "type": "object",
+                "properties": {
+                    "claim_analyzed": {
+                        "type": "string",
+                        "description": "متن کامل ادعایی که بررسی کردید",
+                        "nullable": True
+                    },
+                    "original_source": {
+                        "type": "array",
+                        "description": "",
+                        "nullable": True,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "نام دقیق شخص، گروه، شرکت یا نهادی که ادعا را اولین بار مطرح کرد (یا 'ناشناخته' اگر قابل شناسایی نبود)",
+                                    "nullable": True
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "نوع منبع (مثال: 'شخص - سیاستمدار'، 'سازمان خبری'، 'گروه تحقیقاتی'، 'کاربر شبکه اجتماعی', 'شرکت', 'نهاد دولتی')",
+                                    "nullable": True
+                                }
+                            }
+                        }
+                    },
+                    "initial_publication": {
+                        "type": "array",
+                        "description": "",
+                        "nullable": True,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "platform": {
+                                    "type": "string",
+                                    "description": "نام پلتفرم یا رسانه‌ای که ادعا اولین بار در آن منتشر شد (مثال: 'توییتر/X'، 'وب‌سایت رسمی شرکت'، 'سخنرانی رسمی'، 'گزارش تحقیقی', 'وب‌سایت خبری XYZ')",
+                                    "nullable": True
+                                },
+                                "reference_title_or_description": {
+                                    "type": "string",
+                                    "description": "عنوان مقاله، توضیحات پست، یا شرح مختصری از منبع اولیه",
+                                    "nullable": True
+                                },
+                                "publication_date": {
+                                    "type": "string",
+                                    "description": "تاریخ شمسی دقیق یا تخمینی اولین انتشار (به فرمت YYYY-MM-DD)",
+                                    "nullable": True
+                                }
+
+                            }
+                        }
+                    },
+                    "analysis_summary": {
+                        "type": "string",
+                        "description": "توضیح بسیار مختصر در مورد اینکه چگونه این منبع به عنوان منشأ اولیه شناسایی شد و درجه اطمینان از این یافته.",
+                        "nullable": True
+                    },
+                    "evidence_sources": {
+                        "type": "array",
+                        "description": "",
+                        "nullable": True,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "description": "عنوان منبع کمکی  (مقاله‌ای که به منبع اصلی اشاره دارد)",
+                                    "nullable": True
+                                },
+                                "snippet": {
+                                    "type": "string",
+                                    "description": "بخش کوتاهی از متن منبع که به ردیابی کمک کرده است",
+                                    "nullable": True
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "claim_analyzed",
+                    "original_source",
+                    "initial_publication",
+                    "analysis_summary",
+                    "evidence_sources",
+                
+                ]
+            }
         }
-        if model_id == "gemini-2.5-flash":
-            config["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+        if model_id == "gemini-3-flash-preview":
+            config["thinking_config"] = types.ThinkingConfig(thinking_level="low")
 
         response = client.models.generate_content(
             model=model_id,
@@ -1212,9 +1094,127 @@ def get_fact_check_response(prompt: str, model_id: str, use_additional_instructi
         "tools": [types.Tool(google_search=types.GoogleSearch())],
         "system_instruction": [types.Part.from_text(text=system_instruction)],
         "temperature": 0.3,
+        "response_schema": {
+        "type": "object",
+        "properties": {
+            "claims_and_evidences": {
+                "type": "array",
+                "description": "",
+                "nullable": True,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "claims": {
+                            "type": "array",
+                            "description": "",
+                            "nullable": True,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "claims_context": {
+                                        "type": "string",
+                                        "description": "",
+                                        "nullable": True
+                                    },
+                                    "atomic_questions": {
+                                        "type": "array",
+                                        "description": "",
+                                        "nullable": True,
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "question": {
+                                                    "type": "string",
+                                                    "description": "",
+                                                    "nullable": True
+                                                },
+                                                "evidences": {
+                                                    "type": "array",
+                                                    "description": "",
+                                                    "nullable": True,
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "date": {
+                                                                "type": "string",
+                                                                "description": "",
+                                                                "nullable": True
+                                                            },
+                                                            "source_title": {
+                                                                "type": "string",
+                                                                "description": "",
+                                                                "nullable": True
+                                                            },
+                                                            "Quote": {
+                                                                "type": "string",
+                                                                "description": "",
+                                                                "nullable": True
+                                                            },
+                                                            "stance": {
+                                                                "type": "string",
+                                                                "description": "",
+                                                                "nullable": True
+                                                            },
+                                                            "interpretation": {
+                                                                "type": "string",
+                                                                "description": "",
+                                                                "nullable": True
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "total_fact_checking": {
+                "type": "array",
+                "description": "",
+                "nullable": True,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        
+                        "summary_of_findings": {
+                            "type": "string",
+                            "description": "",
+                            "nullable": True
+                        },
+                        "verdict": {
+                            "type": "string",
+                            "enum": [
+                                "درست",
+                                "نیمه درست",
+                                "گمراه کننده",
+                                "نادرست",
+                                "غیر قابل بررسی",
+                            ],
+                            "description": "",
+                            "nullable": True
+                        },
+                        "reasoning": {
+                            "type": "string",
+                            "description": "",
+                            "nullable": True
+                        }
+                    }
+                }
+            }
+        },
+        "required": [
+            "claims_and_evidences",
+            "total_fact_checking"
+            
+        ]
+        }
     }
-    if model_id == "gemini-2.5-flash":
-        config["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+    if model_id == "gemini-3-flash-preview":
+        config["thinking_config"] = types.ThinkingConfig(thinking_level="low")
 
     try:
         response = client.models.generate_content(
@@ -1314,7 +1314,7 @@ if "source_status" not in st.session_state:
 if "source_pending" not in st.session_state:
     st.session_state.source_pending = False
 if "source_model" not in st.session_state:
-    st.session_state.source_model = "gemini-2.5-flash"
+    st.session_state.source_model = "gemini-3-flash-preview"
 
 if "fact_check_results" not in st.session_state:
     st.session_state.fact_check_results = None
@@ -1327,7 +1327,7 @@ if "fact_check_pending" not in st.session_state:
 if "fact_check_input" not in st.session_state:
     st.session_state.fact_check_input = ""
 if "fact_model" not in st.session_state:
-    st.session_state.fact_model = "gemini-2.5-flash"
+    st.session_state.fact_model = "gemini-3-flash-preview"
 if "use_additional_instruction" not in st.session_state:
     st.session_state.use_additional_instruction = False
 if "use_additional_instruction_2" not in st.session_state:
@@ -1380,7 +1380,7 @@ with st.sidebar:
             st.session_state.source_model = st.session_state._source_model_temp
         
         # پیدا کردن index مدل انتخاب شده
-        source_model_options = ["gemini-2.5-flash", "gemini-2.5-pro"]
+        source_model_options = ["gemini-3-flash-preview", "gemini-3-pro-preview"]
         source_model_index = source_model_options.index(st.session_state.source_model) if st.session_state.source_model in source_model_options else 0
         
         st.selectbox(
@@ -1414,7 +1414,7 @@ with st.sidebar:
             st.session_state.fact_model = st.session_state._fact_model_temp
         
         # پیدا کردن index مدل انتخاب شده
-        fact_model_options = ["gemini-2.5-flash", "gemini-2.5-pro"]
+        fact_model_options = ["gemini-3-flash-preview", "gemini-3-pro-preview"]
         fact_model_index = fact_model_options.index(st.session_state.fact_model) if st.session_state.fact_model in fact_model_options else 0
         
         st.selectbox(
